@@ -1,4 +1,4 @@
-type TraceEvent =
+export type TraceEvent =
     | { tipo: 'ESTRELLA'; valor: string }
     | { tipo: 'DESPEGUE'; naveId: string }
     | { tipo: 'EN_COLA'; naveId: string; carril: 'VIP' | 'NORMAL' }
