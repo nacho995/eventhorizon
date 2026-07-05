@@ -1,5 +1,5 @@
 import { Canvas, useFrame } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { OrbitControls, Text } from '@react-three/drei'
 import { useRef, useState } from 'react'
 import * as THREE from 'three'
 import { trazaMock } from './trace/mockTrace'   // ← el reproductor necesita los datos de la traza
@@ -35,13 +35,17 @@ function Estrellas({ valores }: EstrellasProps) {
     return (
         <>
             {valores.map((valor, index) => (
-                <mesh
-                    key={`${valor}-${index}`}
-                    position={posiciones[index]}
-                >
-                    <sphereGeometry args={[0.12, 16, 16]} />
-                    <meshBasicMaterial color="white" />
-                </mesh>
+                // group = contenedor de transformación: posiciona la estrella Y su
+                // etiqueta juntas; dentro, cada hijo se coloca relativo al group.
+                <group key={`${valor}-${index}`} position={posiciones[index]}>
+                    <mesh>
+                        <sphereGeometry args={[0.12, 16, 16]} />
+                        <meshBasicMaterial color="white" />
+                    </mesh>
+                    <Text position={[0, 0.28, 0]} fontSize={0.22} color="white" anchorX="center">
+                        {valor}
+                    </Text>
+                </group>
             ))}
         </>
     )
@@ -57,14 +61,17 @@ function ColaNaves({ naves, x, color }: ColaNavesProps) {
     return (
         <>
             {naves.map((naveId, index) => (
-                <mesh
-                    key={naveId}
-                    position={[x + index * 0.5, -1.7, 0]}
-                    rotation={[0, 0, -Math.PI / 2]}
-                >
-                    <coneGeometry args={[0.18, 0.45, 16]} />
-                    <meshStandardMaterial color={color} />
-                </mesh>
+                <group key={naveId} position={[x + index * 0.5, -1.7, 0]}>
+                    {/* la rotación va SOLO en el mesh, no en el group: así el cono
+                        apunta de lado pero la etiqueta NO hereda el giro y queda legible */}
+                    <mesh rotation={[0, 0, -Math.PI / 2]}>
+                        <coneGeometry args={[0.18, 0.45, 16]} />
+                        <meshStandardMaterial color={color} />
+                    </mesh>
+                    <Text position={[0, 0.4, 0]} fontSize={0.16} color={color} anchorX="center">
+                        {naveId}
+                    </Text>
+                </group>
             ))}
         </>
     )
@@ -89,12 +96,44 @@ function NavesEnOrbita({ naves, radio = 2.5, color = 'magenta' }: NavesEnOrbitaP
                 const x = radio * Math.cos(angulo)
                 const z = radio * Math.sin(angulo)
                 return (
-                    <mesh key={naveId} position={[x, 0, z]}>
-                        <coneGeometry args={[0.18, 0.45, 16]} />
-                        <meshStandardMaterial color={color} />
-                    </mesh>
+                    <group key={naveId} position={[x, 0, z]}>
+                        <mesh>
+                            <coneGeometry args={[0.18, 0.45, 16]} />
+                            <meshStandardMaterial color={color} />
+                        </mesh>
+                        <Text position={[0, 0.4, 0]} fontSize={0.16} color={color} anchorX="center">
+                            {naveId}
+                        </Text>
+                    </group>
                 )
             })}
+        </>
+    )
+}
+
+// Etiquetas fijas de cada zona del event loop, con el color de su región para
+// reforzar la asociación. Texto 3D (drei <Text>) que vive dentro de la escena.
+// Nota: <Text> tiene orientación fija (mira a +z); al orbitar la cámara se ve de
+// lado — envolver en <Billboard> (drei) para que siempre mire al usuario es la
+// mejora pendiente.
+function EtiquetasZona() {
+    return (
+        <>
+            <Text position={[0, -0.1, 1.3]} fontSize={0.22} color="royalblue" anchorX="center">
+                Call Stack
+            </Text>
+            <Text position={[0, 2.9, 0]} fontSize={0.2} color="white" anchorX="center">
+                console.log
+            </Text>
+            <Text position={[3, 0, 0]} fontSize={0.2} color="magenta" anchorX="center">
+                Web APIs (orbita)
+            </Text>
+            <Text position={[-2, -1.05, 0]} fontSize={0.2} color="cyan" anchorX="center">
+                Microtask (VIP)
+            </Text>
+            <Text position={[1.7, -1.05, 0]} fontSize={0.2} color="orange" anchorX="center">
+                Macrotask
+            </Text>
         </>
     )
 }
@@ -129,6 +168,7 @@ function App() {
                 <ColaNaves naves={estado.colaVIP} x={-2} color="cyan" />
                 <ColaNaves naves={estado.colaNormal} x={1.2} color="orange" />
                 <NavesEnOrbita naves={estado.orbitando} />
+                <EtiquetasZona />
                 <OrbitControls />
             </Canvas>
 
