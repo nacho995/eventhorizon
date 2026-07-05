@@ -1,0 +1,10 @@
+# Root-level ignores (frontend/ has its own too)
+
+# IDE / editor
+.idea/
+
+# OS
+.DS_Store
+
+# Node safety net (each app under frontend/ also ignores it)
+node_modules/
